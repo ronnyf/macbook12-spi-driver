@@ -422,7 +422,7 @@ static int appleib_hid_event(struct hid_device *hdev, struct hid_field *field,
 	return appleib_forward_int_op(hdev, appleib_hid_event_fwd, &args);
 }
 
-static __u8 *appleib_report_fixup(struct hid_device *hdev, __u8 *rdesc,
+static const __u8 *appleib_report_fixup(struct hid_device *hdev, __u8 *rdesc,
 				  unsigned int *rsize)
 {
 	/* Some fields have a size of 64 bits, which according to HID 1.11
@@ -843,13 +843,11 @@ static int appleib_probe(struct acpi_device *acpi)
 	return 0;
 }
 
-static int appleib_remove(struct acpi_device *acpi)
+static void appleib_remove(struct acpi_device *acpi)
 {
 	struct appleib_device *ib_dev = acpi_driver_data(acpi);
 
 	hid_unregister_driver(&ib_dev->ib_driver);
-
-	return 0;
 }
 
 static int appleib_suspend(struct device *dev)
@@ -898,7 +896,6 @@ MODULE_DEVICE_TABLE(acpi, appleib_acpi_match);
 static struct acpi_driver appleib_driver = {
 	.name		= "apple-ibridge",
 	.class		= "topcase", /* ? */
-	.owner		= THIS_MODULE,
 	.ids		= appleib_acpi_match,
 	.ops		= {
 		.add		= appleib_probe,
