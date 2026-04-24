@@ -1208,7 +1208,6 @@ static const struct file_operations applespi_tp_dim_fops = {
 	.owner = THIS_MODULE,
 	.open = applespi_tp_dim_open,
 	.read = applespi_tp_dim_read,
-	.llseek = noop_llseek,
 };
 
 static void report_finger_data(struct input_dev *input, int slot,
@@ -2579,7 +2578,7 @@ unregister_driver:
 	return ret;
 }
 
-static int appleacpi_remove(struct acpi_device *adev)
+static void appleacpi_remove(struct acpi_device *adev)
 {
 	struct appleacpi_spi_registration_info *reg_info;
 
@@ -2597,14 +2596,11 @@ static int appleacpi_remove(struct acpi_device *adev)
 	spi_unregister_driver(&applespi_driver);
 
 	pr_info("acpi-device remove done: %s\n", acpi_device_hid(adev));
-
-	return 0;
 }
 
 static struct acpi_driver appleacpi_driver = {
 	.name		= "appleacpi",
 	.class		= "topcase", /* ? */
-	.owner		= THIS_MODULE,
 	.ids		= applespi_acpi_match,
 	.ops		= {
 		.add		= appleacpi_probe,

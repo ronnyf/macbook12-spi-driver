@@ -495,7 +495,7 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 		dev_err(als_dev->log_dev,
 			"Failed to register iio trigger: %d\n",
 			rc);
-		goto free_iio_trig;
+		goto clean_trig_buf;
 	}
 
 	als_dev->iio_trig = iio_trig;
@@ -513,9 +513,6 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 
 unreg_iio_trig:
 	iio_trigger_unregister(iio_trig);
-free_iio_trig:
-	iio_trigger_free(iio_trig);
-	als_dev->iio_trig = NULL;
 clean_trig_buf:
 	iio_triggered_buffer_cleanup(iio_dev);
 free_iio_dev:
@@ -570,7 +567,6 @@ static void appleals_remove(struct hid_device *hdev)
 	iio_device_unregister(als_dev->iio_dev);
 
 	iio_trigger_unregister(als_dev->iio_trig);
-	iio_trigger_free(als_dev->iio_trig);
 
 	iio_triggered_buffer_cleanup(als_dev->iio_dev);
 	iio_device_free(als_dev->iio_dev);
