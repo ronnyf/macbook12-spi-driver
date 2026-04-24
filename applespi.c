@@ -61,7 +61,7 @@
 #include <linux/wait.h>
 
 #include <asm/barrier.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 
 #define CREATE_TRACE_POINTS
 #include "applespi.h"
@@ -587,7 +587,7 @@ static void applespi_setup_read_txfrs(struct applespi_data *applespi)
 	memset(dl_t, 0, sizeof(*dl_t));
 	memset(rd_t, 0, sizeof(*rd_t));
 
-	dl_t->delay_usecs = applespi->spi_settings.spi_cs_delay;
+	dl_t->delay = (struct spi_delay){ .value = applespi->spi_settings.spi_cs_delay, .unit = SPI_DELAY_UNIT_USECS };
 
 	rd_t->rx_buf = applespi->rx_buffer;
 	rd_t->len = APPLESPI_PACKET_SIZE;
@@ -616,14 +616,14 @@ static void applespi_setup_write_txfrs(struct applespi_data *applespi)
 	 * end up with an extra unnecessary (but harmless) cs assertion and
 	 * deassertion.
 	 */
-	wt_t->delay_usecs = SPI_RW_CHG_DELAY_US;
+	wt_t->delay = (struct spi_delay){ .value = SPI_RW_CHG_DELAY_US, .unit = SPI_DELAY_UNIT_USECS };
 	wt_t->cs_change = 1;
 
-	dl_t->delay_usecs = applespi->spi_settings.spi_cs_delay;
+	dl_t->delay = (struct spi_delay){ .value = applespi->spi_settings.spi_cs_delay, .unit = SPI_DELAY_UNIT_USECS };
 
 	wr_t->tx_buf = applespi->tx_buffer;
 	wr_t->len = APPLESPI_PACKET_SIZE;
-	wr_t->delay_usecs = SPI_RW_CHG_DELAY_US;
+	wr_t->delay = (struct spi_delay){ .value = SPI_RW_CHG_DELAY_US, .unit = SPI_DELAY_UNIT_USECS };
 
 	st_t->rx_buf = applespi->tx_status;
 	st_t->len = APPLESPI_STATUS_SIZE;
@@ -1208,7 +1208,7 @@ static const struct file_operations applespi_tp_dim_fops = {
 	.owner = THIS_MODULE,
 	.open = applespi_tp_dim_open,
 	.read = applespi_tp_dim_read,
-	.llseek = no_llseek,
+	.llseek = noop_llseek,
 };
 
 static void report_finger_data(struct input_dev *input, int slot,
@@ -1786,52 +1786,45 @@ static u32 applespi_notify(acpi_handle gpe_device, u32 gpe, void *context)
 
 static int applespi_get_saved_bl_level(struct applespi_data *applespi)
 {
-	struct efivar_entry *efivar_entry;
 	u16 efi_data = 0;
 	unsigned long efi_data_len;
-	int sts;
+	efi_status_t sts;
 
-	efivar_entry = kmalloc(sizeof(*efivar_entry), GFP_KERNEL);
-	if (!efivar_entry)
-		return -ENOMEM;
-
-	memcpy(efivar_entry->var.VariableName, EFI_BL_LEVEL_NAME,
-	       sizeof(EFI_BL_LEVEL_NAME));
-	efivar_entry->var.VendorGuid = EFI_BL_LEVEL_GUID;
 	efi_data_len = sizeof(efi_data);
+	sts = efi.get_variable(EFI_BL_LEVEL_NAME, &EFI_BL_LEVEL_GUID, NULL,
+			       &efi_data_len, &efi_data);
+	if (sts != EFI_SUCCESS) {
+		int err = sts == EFI_NOT_FOUND ? -ENOENT : -EIO;
+		if (sts != EFI_NOT_FOUND)
+			dev_warn(&applespi->spi->dev,
+				 "Error getting backlight level from EFI vars: %ld\n",
+				 sts);
+		return err;
+	}
 
-	sts = efivar_entry_get(efivar_entry, NULL, &efi_data_len, &efi_data);
-	if (sts && sts != -ENOENT)
-		dev_warn(&applespi->spi->dev,
-			 "Error getting backlight level from EFI vars: %d\n",
-			 sts);
-
-	kfree(efivar_entry);
-
-	return sts ? sts : efi_data;
+	return efi_data;
 }
 
 static void applespi_save_bl_level(struct applespi_data *applespi,
 				   unsigned int level)
 {
-	efi_guid_t efi_guid;
 	u32 efi_attr;
 	unsigned long efi_data_len;
 	u16 efi_data;
-	int sts;
+	efi_status_t sts;
 
 	/* Save keyboard backlight level */
-	efi_guid = EFI_BL_LEVEL_GUID;
 	efi_data = (u16)level;
 	efi_data_len = sizeof(efi_data);
 	efi_attr = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS |
 		   EFI_VARIABLE_RUNTIME_ACCESS;
 
-	sts = efivar_entry_set_safe((efi_char16_t *)EFI_BL_LEVEL_NAME, efi_guid,
-				    efi_attr, true, efi_data_len, &efi_data);
-	if (sts)
+	sts = efi.set_variable_nonblocking((efi_char16_t *)EFI_BL_LEVEL_NAME,
+					   &EFI_BL_LEVEL_GUID, efi_attr,
+					   efi_data_len, &efi_data);
+	if (sts != EFI_SUCCESS)
 		dev_warn(&applespi->spi->dev,
-			 "Error saving backlight level to EFI vars: %d\n", sts);
+			 "Error saving backlight level to EFI vars: %ld\n", sts);
 }
 
 static void applespi_enable_early_event_tracing(struct device *dev)
@@ -2109,7 +2102,7 @@ static void applespi_drain_reads(struct applespi_data *applespi)
 	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
 }
 
-static int applespi_remove(struct spi_device *spi)
+static void applespi_remove(struct spi_device *spi)
 {
 	struct applespi_data *applespi = spi_get_drvdata(spi);
 
@@ -2122,8 +2115,6 @@ static int applespi_remove(struct spi_device *spi)
 	applespi_drain_reads(applespi);
 
 	debugfs_remove_recursive(applespi->debugfs_root);
-
-	return 0;
 }
 
 static void applespi_shutdown(struct spi_device *spi)

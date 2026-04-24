@@ -460,7 +460,7 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 	struct appleals_device **priv;
 	int rc;
 
-	iio_dev = iio_device_alloc(sizeof(als_dev));
+	iio_dev = iio_device_alloc(&als_dev->hid_dev->dev, sizeof(als_dev));
 	if (!iio_dev)
 		return -ENOMEM;
 
@@ -469,7 +469,6 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 
 	iio_dev->channels = appleals_channels;
 	iio_dev->num_channels = ARRAY_SIZE(appleals_channels);
-	iio_dev->dev.parent = &als_dev->hid_dev->dev;
 	iio_dev->info = &appleals_info;
 	iio_dev->name = "als";
 	iio_dev->modes = INDIO_DIRECT_MODE;
@@ -482,13 +481,12 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 		goto free_iio_dev;
 	}
 
-	iio_trig = iio_trigger_alloc("%s-dev%d", iio_dev->name, iio_dev->id);
+	iio_trig = devm_iio_trigger_alloc(&iio_dev->dev, "%s-dev", iio_dev->name);
 	if (!iio_trig) {
 		rc = -ENOMEM;
 		goto clean_trig_buf;
 	}
 
-	iio_trig->dev.parent = &als_dev->hid_dev->dev;
 	iio_trig->ops = &appleals_trigger_ops;
 	iio_trigger_set_drvdata(iio_trig, als_dev);
 
@@ -631,23 +629,14 @@ error:
 	return rc;
 }
 
-static int appleals_platform_remove(struct platform_device *pdev)
+static void appleals_platform_remove(struct platform_device *pdev)
 {
 	struct appleib_device_data *ddata = pdev->dev.platform_data;
 	struct appleib_device *ib_dev = ddata->ib_dev;
 	struct appleals_device *als_dev = platform_get_drvdata(pdev);
-	int rc;
 
-	rc = appleib_unregister_hid_driver(ib_dev, &appleals_hid_driver);
-	if (rc)
-		goto error;
-
+	appleib_unregister_hid_driver(ib_dev, &appleals_hid_driver);
 	kfree(als_dev);
-
-	return 0;
-
-error:
-	return rc;
 }
 
 static const struct platform_device_id appleals_platform_ids[] = {
