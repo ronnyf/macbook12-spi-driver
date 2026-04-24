@@ -14,7 +14,7 @@ Out-of-tree Linux kernel modules for MacBook SPI keyboard/trackpad and iBridge (
 ## Build
 
 ```
-make              # builds all 4 .ko modules against running kernel
+make LLVM=1 all   # builds all 4 .ko modules against running kernel
 make clean        # removes build artifacts
 make install      # modules_install to /lib/modules/...
 ```
