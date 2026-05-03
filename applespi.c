@@ -458,7 +458,7 @@ struct applespi_data {
 
 	struct dentry			*debugfs_root;
 	bool				debug_tp_dim;
-	char				tp_dim_val[40];
+	char				tp_dim_val[64];
 	int				tp_dim_min_x;
 	int				tp_dim_max_x;
 	int				tp_dim_min_y;
