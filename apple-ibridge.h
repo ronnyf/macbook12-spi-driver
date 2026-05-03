@@ -5,8 +5,8 @@
  * Copyright (c) 2018 Ronald Tschalär
  */
 
-#ifndef __LINUX_MFD_APPLE_IBRDIGE_H
-#define __LINUX_MFD_APPLE_IBRDIGE_H
+#ifndef __LINUX_MFD_APPLE_IBRIDGE_H
+#define __LINUX_MFD_APPLE_IBRIDGE_H
 
 #include <linux/device.h>
 #include <linux/hid.h>
