@@ -12,18 +12,41 @@ endif
 KDIR := /lib/modules/$(KVERSION)/build
 PWD := $(shell pwd)
 
-# Match the compiler used to build the running kernel
+# Match the compiler/toolchain used to build the running kernel
 _KERN_CLANG := $(shell grep -q CONFIG_CC_IS_CLANG $(KDIR)/.config 2>/dev/null && echo 1)
-_KERN_CC :=
+_KERN_LLD := $(shell grep -q CONFIG_LLD_VERSION $(KDIR)/.config 2>/dev/null && echo 1)
+_KERN_FLAGS :=
 ifeq ($(_KERN_CLANG),1)
   _CLANG := $(shell which clang 2>/dev/null)
+  _LLVM_AR := $(shell which llvm-ar 2>/dev/null)
+  _LLVM_NM := $(shell which llvm-nm 2>/dev/null)
+  _LLVM_OBJCOPY := $(shell which llvm-objcopy 2>/dev/null)
+  _LLVM_OBJDUMP := $(shell which llvm-objdump 2>/dev/null)
   ifneq ($(_CLANG),)
-    _KERN_CC := CC=clang
+    _KERN_FLAGS += CC=clang
+    ifneq ($(_LLVM_AR),)
+      _KERN_FLAGS += AR=$(_LLVM_AR)
+    endif
+    ifneq ($(_LLVM_NM),)
+      _KERN_FLAGS += NM=$(_LLVM_NM)
+    endif
+    ifneq ($(_LLVM_OBJCOPY),)
+      _KERN_FLAGS += OBJCOPY=$(_LLVM_OBJCOPY)
+    endif
+    ifneq ($(_LLVM_OBJDUMP),)
+      _KERN_FLAGS += OBJDUMP=$(_LLVM_OBJDUMP)
+    endif
+  endif
+endif
+ifeq ($(_KERN_LLD),1)
+  _LLD := $(shell which ld.lld 2>/dev/null)
+  ifneq ($(_LLD),)
+    _KERN_FLAGS += LD=$(_LLD)
   endif
 endif
 
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) $(_KERN_CC) modules
+	$(MAKE) -C $(KDIR) M=$(PWD) $(_KERN_FLAGS) modules
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
