@@ -1316,6 +1316,9 @@ static unsigned int applespi_translate_iso_layout(unsigned int key)
 
 static unsigned int applespi_code_to_key(u8 code, int fn_pressed)
 {
+	if (code >= ARRAY_SIZE(applespi_scancodes))
+		return 0;
+
 	unsigned int key = applespi_scancodes[code];
 
 	if (fnmode)
