@@ -67,7 +67,7 @@ makepkg -si
 To build from the repository locally:
 
 ```bash
-make package
+make package-pacman
 makepkg -si
 ```
 

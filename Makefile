@@ -29,6 +29,6 @@ test: all
 PKGNAME = applespi
 PKGVER = 0.1
 
-package: all
+package-pacman: all
 	tar czf $(PKGNAME)-$(PKGVER).tar.gz --exclude-vcs --exclude='*.tar.gz' --exclude='.git' .
 	makepkg --force -s
