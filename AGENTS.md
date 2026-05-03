@@ -31,7 +31,7 @@ apple-ibridge  (MFD [multi-function device] core, discovers HID devices on T1 ch
 ## Build
 
 ```
-make LLVM=1 all   # builds all 4 .ko modules against running kernel
+make all   # builds all 4 .ko modules against running kernel
 make clean        # removes build artifacts
 make install      # modules_install to /lib/modules/...
 ```
