@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create tarball
+        run: |
+          PKGNAME=applespi
+          PKGVER=${{ steps.version.outputs.version }}
+          tar czf "${PKGNAME}-${PKGVER}.tar.gz" \
+            --exclude-vcs \
+            --exclude='*.tar.gz' \
+            --exclude='.github' \
+            .
+
+
+      - name: Generate checksum
+        run: |
+          PKGNAME=applespi
+          PKGVER=${{ steps.version.outputs.version }}
+          sha256sum "${PKGNAME}-${PKGVER}.tar.gz" > "${PKGNAME}-${PKGVER}.tar.gz.sha256"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            applespi-${{ steps.version.outputs.version }}.tar.gz
+            applespi-${{ steps.version.outputs.version }}.tar.gz.sha256
+          generate_release_notes: true

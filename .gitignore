@@ -66,6 +66,7 @@ Module.symvers
 #
 !.gitignore
 !.mailmap
+!.github/
 
 #
 # Generated include files
@@ -112,3 +113,12 @@ all.config
 
 # Kdevelop4
 *.kdev4
+
+# Pacman package build artifacts
+*.tar.gz
+*.tar.gz.sha256
+*.pkg.tar.zst
+
+# kbuild .mod files
+*.mod
+
