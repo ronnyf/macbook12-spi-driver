@@ -25,7 +25,7 @@ As root, do the following (all MacBook's and MacBook Pro's except MacBook8,1 (20
 echo -e "\n# applespi\napplespi\nspi_pxa2xx_platform\nintel_lpss_pci" >> /etc/initramfs-tools/modules
 
 apt install dkms
-git clone https://github.com/roadrunner2/macbook12-spi-driver.git /usr/src/applespi-0.1
+git clone https://github.com/ronnyf/macbook12-spi-driver.git /usr/src/applespi-0.1
 dkms install -m applespi -v 0.1
 ```
 
@@ -34,7 +34,7 @@ If you're on a MacBook8,1 (2015):
 echo -e "\n# applespi\napplespi\nspi_pxa2xx_platform\nspi_pxa2xx_pci" >> /etc/initramfs-tools/modules
 
 apt install dkms
-git clone https://github.com/roadrunner2/macbook12-spi-driver.git /usr/src/applespi-0.1
+git clone https://github.com/ronnyf/macbook12-spi-driver.git /usr/src/applespi-0.1
 dkms install -m applespi -v 0.1
 ```
 
@@ -49,6 +49,26 @@ Or use this [copr repository](https://copr.fedorainfracloud.org/coprs/meeuw/macb
 $ dnf copr enable meeuw/macbook12-spi-driver-kmod
 
 $ dnf install macbook12-spi-driver-kmod
+```
+
+Pacman package (Arch Linux & co):
+---------------------------------
+Download the latest release tarball from [GitHub Releases](https://github.com/ronnyf/macbook12-spi-driver/releases) and build the package:
+
+```bash
+wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v0.1/applespi-0.1.tar.gz
+wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v0.1/applespi-0.1.tar.gz.sha256
+sha256sum -c applespi-0.1.tar.gz.sha256
+tar xzf applespi-0.1.tar.gz
+cd applespi-0.1
+makepkg -si
+```
+
+To build from the repository locally:
+
+```bash
+make package-pacman
+makepkg -si
 ```
 
 What doesn't work:
