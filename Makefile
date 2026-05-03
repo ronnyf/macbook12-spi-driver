@@ -12,8 +12,18 @@ endif
 KDIR := /lib/modules/$(KVERSION)/build
 PWD := $(shell pwd)
 
+# Match the compiler used to build the running kernel
+_KERN_CLANG := $(shell grep -q CONFIG_CC_IS_CLANG $(KDIR)/.config 2>/dev/null && echo 1)
+_KERN_CC :=
+ifeq ($(_KERN_CLANG),1)
+  _CLANG := $(shell which clang 2>/dev/null)
+  ifneq ($(_CLANG),)
+    _KERN_CC := CC=clang
+  endif
+endif
+
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	$(MAKE) -C $(KDIR) M=$(PWD) $(_KERN_CC) modules
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
