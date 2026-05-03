@@ -59,6 +59,15 @@ Download the latest release tarball from [GitHub Releases](https://github.com/ro
 wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v0.1/applespi-0.1.tar.gz
 wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v0.1/applespi-0.1.tar.gz.sha256
 sha256sum -c applespi-0.1.tar.gz.sha256
+tar xzf applespi-0.1.tar.gz
+cd applespi-0.1
+makepkg -si
+```
+
+To build from the repository locally:
+
+```bash
+make package
 makepkg -si
 ```
 
