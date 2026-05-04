@@ -49,9 +49,9 @@ No CI, linter, formatter, or automated tests exist. Code review is manual.
 
 ## DKMS
 
-`dkms.conf` declares all 4 modules with version `0.1`. For Debian/Ubuntu:
+`dkms.conf` declares all 4 modules with version `1.0.0`. For Debian/Ubuntu:
 ```
-dkms install -m applespi -v 0.1
+dkms install -m applespi -v 1.0.0
 ```
 
 ## Debugging

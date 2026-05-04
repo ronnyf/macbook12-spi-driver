@@ -60,7 +60,7 @@ test: all
 	insmod ./applespi.ko
 
 PKGNAME = applespi
-PKGVER = 0.1
+PKGVER = 1.0.0
 
 package-pacman: all
 	tar czf $(PKGNAME)-$(PKGVER).tar.gz --exclude-vcs --exclude='*.tar.gz' --exclude='.git' .

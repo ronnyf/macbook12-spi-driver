@@ -1,7 +1,7 @@
 # Maintainer: Ronny F. <ronnyf@icloud.com>
 
 pkgname=applespi
-pkgver=0.1
+pkgver=1.0.0
 pkgrel=1
 pkgdesc='Input driver for the SPI keyboard/trackpad found on 12" MacBooks and newer MacBook Pros, plus touchbar and ALS drivers for iBridge (T1) chip'
 arch=(x86_64)

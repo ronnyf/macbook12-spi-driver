@@ -25,8 +25,8 @@ As root, do the following:
 echo -e "\n# applespi\napplespi\nspi_pxa2xx_platform\nintel_lpss_pci" >> /etc/initramfs-tools/modules
 
 apt install dkms
-git clone https://github.com/ronnyf/macbook12-spi-driver.git /usr/src/applespi-0.1
-dkms install -m applespi -v 0.1
+git clone https://github.com/ronnyf/macbook12-spi-driver.git /usr/src/applespi-1.0.0
+dkms install -m applespi -v 1.0.0
 ```
 
 Akmods module (RPM Fusion / Red Hat & co):
@@ -47,11 +47,11 @@ Pacman package (Arch Linux & co):
 Download the latest release tarball from [GitHub Releases](https://github.com/ronnyf/macbook12-spi-driver/releases) and build the package:
 
 ```bash
-wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v0.1/applespi-0.1.tar.gz
-wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v0.1/applespi-0.1.tar.gz.sha256
-sha256sum -c applespi-0.1.tar.gz.sha256
-tar xzf applespi-0.1.tar.gz
-cd applespi-0.1
+wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v1.0.0/applespi-1.0.0.tar.gz
+wget https://github.com/ronnyf/macbook12-spi-driver/releases/download/v1.0.0/applespi-1.0.0.tar.gz.sha256
+sha256sum -c applespi-1.0.0.tar.gz.sha256
+tar xzf applespi-1.0.0.tar.gz
+cd applespi-1.0.0
 makepkg -si
 ```
 
@@ -94,7 +94,7 @@ The ALS driver exposes the ambient light sensor; if you have the `iio-sensor-pro
 
 Upgrading:
 ----------
-The touchbar and ALS drivers used to be in a single module, `appletb`. This has now been split up into 3 modules, `apple_ibridge`, `apple_ib_tb`, and `apple_ib_als`. Generally whereever you were using `appletb` (e.g. in the initrd/dracut/whatever configs) you want to use `apple_ib_tb` now. Also, make sure to remove the old `appletb` module, either by first doing a `sudo dkms remove applespi/0.1 --all` before upgrading, or by manually removing the driver (e.g. `sudo find /lib/modules/ -name appletb.ko | xargs rm`).
+The touchbar and ALS drivers used to be in a single module, `appletb`. This has now been split up into 3 modules, `apple_ibridge`, `apple_ib_tb`, and `apple_ib_als`. Generally whereever you were using `appletb` (e.g. in the initrd/dracut/whatever configs) you want to use `apple_ib_tb` now. Also, make sure to remove the old `appletb` module, either by first doing a `sudo dkms remove applespi/1.0.0 --all` before upgrading, or by manually removing the driver (e.g. `sudo find /lib/modules/ -name appletb.ko | xargs rm`).
 
 Some useful threads:
 --------------------
