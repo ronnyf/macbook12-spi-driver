@@ -968,6 +968,8 @@ static int appletb_fill_report_info(struct appletb_device *tb_dev,
 		report_info->report_type = 0x02; break;
 	case HID_FEATURE_REPORT:
 		report_info->report_type = 0x03; break;
+	default:
+		return -EINVAL;
 	}
 
 	return 1;
