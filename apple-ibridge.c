@@ -665,6 +665,9 @@ static int appleib_hid_probe(struct hid_device *hdev,
 	/* check and set usb config first */
 	udev = hid_to_usb_dev(hdev);
 
+	if (!udev->actconfig)
+		return -ENODEV;
+
 	if (udev->actconfig->desc.bConfigurationValue != APPLETB_BASIC_CONFIG) {
 		rc = usb_driver_set_configuration(udev, APPLETB_BASIC_CONFIG);
 		return rc ? rc : -ENODEV;
