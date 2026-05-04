@@ -500,8 +500,6 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 		goto clean_trig_buf;
 	}
 
-	als_dev->iio_trig = iio_trig;
-
 	rc = iio_device_register(iio_dev);
 	if (rc) {
 		dev_err(als_dev->log_dev, "Failed to register iio device: %d\n",
@@ -509,6 +507,7 @@ static int appleals_config_iio(struct appleals_device *als_dev)
 		goto unreg_iio_trig;
 	}
 
+	als_dev->iio_trig = iio_trig;
 	als_dev->iio_dev = iio_dev;
 
 	return 0;
@@ -574,6 +573,8 @@ static void appleals_remove(struct hid_device *hdev)
 	iio_device_free(als_dev->iio_dev);
 
 	als_dev->hid_dev = NULL;
+	als_dev->cfg_report = NULL;
+	als_dev->illum_field = NULL;
 }
 
 #ifdef CONFIG_PM
