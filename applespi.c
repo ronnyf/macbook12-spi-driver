@@ -2092,48 +2092,62 @@ cancel_spi:
 	return sts;
 }
 
-static void applespi_drain_writes(struct applespi_data *applespi)
+static int applespi_drain_writes(struct applespi_data *applespi)
 {
 	unsigned long flags;
+	int ret;
 
 	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
 
 	applespi->drain = true;
-	wait_event_lock_irq_timeout(applespi->drain_complete,
-				    !applespi->write_active,
-				    applespi->cmd_msg_lock,
-				    msecs_to_jiffies(3000));
+	ret = wait_event_lock_irq_timeout(applespi->drain_complete,
+					  !applespi->write_active,
+					  applespi->cmd_msg_lock,
+					  msecs_to_jiffies(3000));
 
 	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
+
+	if (!ret)
+		dev_warn(&applespi->spi->dev, "Timeout draining writes\n");
+
+	return ret ? 0 : -ETIMEDOUT;
 }
 
-static void applespi_drain_reads(struct applespi_data *applespi)
+static int applespi_drain_reads(struct applespi_data *applespi)
 {
 	unsigned long flags;
+	int ret;
 
 	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
 
-	wait_event_lock_irq_timeout(applespi->drain_complete,
-				    !applespi->read_active,
-				    applespi->cmd_msg_lock,
-				    msecs_to_jiffies(3000));
+	ret = wait_event_lock_irq_timeout(applespi->drain_complete,
+					  !applespi->read_active,
+					  applespi->cmd_msg_lock,
+					  msecs_to_jiffies(3000));
 
 	applespi->suspended = true;
 
 	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
+
+	if (!ret)
+		dev_warn(&applespi->spi->dev, "Timeout draining reads\n");
+
+	return ret ? 0 : -ETIMEDOUT;
 }
 
 static void applespi_remove(struct spi_device *spi)
 {
 	struct applespi_data *applespi = spi_get_drvdata(spi);
 
-	applespi_drain_writes(applespi);
+	if (applespi_drain_writes(applespi))
+		dev_warn(&applespi->spi->dev, "Failed to drain writes on remove\n");
 
 	acpi_disable_gpe(NULL, applespi->gpe);
 	acpi_remove_gpe_handler(NULL, applespi->gpe, applespi_notify);
 	device_wakeup_disable(&spi->dev);
 
-	applespi_drain_reads(applespi);
+	if (applespi_drain_reads(applespi))
+		dev_warn(&applespi->spi->dev, "Failed to drain reads on remove\n");
 
 	debugfs_remove_recursive(applespi->debugfs_root);
 }
@@ -2168,7 +2182,8 @@ static int __maybe_unused applespi_suspend(struct device *dev)
 		dev_warn(&applespi->spi->dev,
 			 "Failed to turn off caps-lock led (%d)\n", sts);
 
-	applespi_drain_writes(applespi);
+	if (applespi_drain_writes(applespi))
+		dev_warn(&applespi->spi->dev, "Failed to drain writes before suspend\n");
 
 	/* disable the interrupt */
 	acpi_sts = acpi_disable_gpe(NULL, applespi->gpe);
@@ -2177,7 +2192,8 @@ static int __maybe_unused applespi_suspend(struct device *dev)
 			"Failed to disable GPE handler for GPE %d: %s\n",
 			applespi->gpe, acpi_format_exception(acpi_sts));
 
-	applespi_drain_reads(applespi);
+	if (applespi_drain_reads(applespi))
+		dev_warn(&applespi->spi->dev, "Failed to drain reads before suspend\n");
 
 	return 0;
 }
