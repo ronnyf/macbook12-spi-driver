@@ -423,37 +423,34 @@ static int appleib_hid_event(struct hid_device *hdev, struct hid_field *field,
 }
 
 static const __u8 *appleib_report_fixup(struct hid_device *hdev, __u8 *rdesc,
-				  unsigned int *rsize)
+						unsigned int *rsize)
 {
 	/* Some fields have a size of 64 bits, which according to HID 1.11
 	 * Section 8.4 is not valid ("An item field cannot span more than 4
 	 * bytes in a report"). Furthermore, hid_field_extract() complains
 	 * when encountering such a field. So turn them into two 32-bit fields
 	 * instead.
+	 *
+	 * Offsets were captured from MacBookPro13,2 T1 chip report descriptor
+	 * via usbmon trace. These are magic numbers tied to the specific T1
+	 * chip firmware — a firmware change would break these silently.
 	 */
 
-	if (*rsize == 634 &&
-	    /* Usage Page 0xff12 (vendor defined) */
-	    rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
-	    /* Usage 0x51 */
+	if (*rsize != 634)
+		return rdesc;
+
+	if (rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
 	    rdesc[416] == 0x09 && rdesc[417] == 0x51 &&
-	    /* report size 64 */
 	    rdesc[432] == 0x75 && rdesc[433] == 64 &&
-	    /* report count 1 */
 	    rdesc[434] == 0x95 && rdesc[435] == 1) {
 		rdesc[433] = 32;
 		rdesc[435] = 2;
 		hid_dbg(hdev, "Fixed up first 64-bit field\n");
 	}
 
-	if (*rsize == 634 &&
-	    /* Usage Page 0xff12 (vendor defined) */
-	    rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
-	    /* Usage 0x51 */
+	if (rdesc[212] == 0x06 && rdesc[213] == 0x12 && rdesc[214] == 0xff &&
 	    rdesc[611] == 0x09 && rdesc[612] == 0x51 &&
-	    /* report size 64 */
 	    rdesc[627] == 0x75 && rdesc[628] == 64 &&
-	    /* report count 1 */
 	    rdesc[629] == 0x95 && rdesc[630] == 1) {
 		rdesc[628] = 32;
 		rdesc[630] = 2;
