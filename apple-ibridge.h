@@ -2,7 +2,7 @@
 /*
  * Apple iBridge Driver
  *
- * Copyright (c) 2018 Ronald Tschalär
+ * Copyright (c) 2018-2026 Ronald Tschalär
  */
 
 #ifndef __LINUX_MFD_APPLE_IBRIDGE_H
