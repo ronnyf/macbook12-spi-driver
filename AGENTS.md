@@ -13,7 +13,7 @@ Out-of-tree Linux kernel modules for MacBook SPI keyboard/trackpad and iBridge (
 
 ## Architecture
 
-`applespi` is a standalone SPI bus driver (upstream since kernel 5.3; this out-of-tree copy supports older kernels). The other three modules form a dependency chain:
+`applespi` is a standalone SPI bus driver (upstream since kernel 5.3; this out-of-tree copy supports kernels 4.14+). The other three modules form a dependency chain:
 
 ```
 apple-ibridge  (MFD [multi-function device] core, discovers HID devices on T1 chip over USB)
@@ -25,8 +25,9 @@ apple-ibridge  (MFD [multi-function device] core, discovers HID devices on T1 ch
 
 ## Kernel Config Prerequisites
 
-- All MacBooks except MacBook8,1: `CONFIG_SPI_PXA2XX=m` and `CONFIG_MFD_INTEL_LPSS_PCI=m`
-- MacBook8,1 (2015): `CONFIG_SPI_PXA2XX=m`, `CONFIG_SPI_PXA2XX_PCI=m`, and `CONFIG_X86_INTEL_LPSS=n` (kernels before 4.14)
+Minimum kernel version: 4.14.
+
+- All MacBooks: `CONFIG_SPI_PXA2XX=m` and `CONFIG_MFD_INTEL_LPSS_PCI=m`
 
 ## Build
 
