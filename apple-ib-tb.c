@@ -1010,9 +1010,6 @@ static int appletb_probe(struct hid_device *hdev,
 
 	/* do setup if we have both interfaces */
 	if (tb_dev->mode_info.hdev && tb_dev->disp_info.hdev) {
-		/* mark active */
-		appletb_mark_active(tb_dev, true);
-
 		/* initialize the touch bar */
 		if (appletb_tb_def_fn_mode >= 0 &&
 		    appletb_tb_def_fn_mode <= APPLETB_FN_MODE_MAX)
@@ -1025,6 +1022,8 @@ static int appletb_probe(struct hid_device *hdev,
 
 		tb_dev->cur_tb_mode = APPLETB_CMD_MODE_OFF;
 		tb_dev->cur_tb_disp = APPLETB_CMD_DISP_OFF;
+
+		appletb_mark_active(tb_dev, true);
 
 		appletb_update_touchbar(tb_dev, false);
 
