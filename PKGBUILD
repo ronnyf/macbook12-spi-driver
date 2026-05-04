@@ -7,7 +7,7 @@ pkgdesc='Input driver for the SPI keyboard/trackpad found on 12" MacBooks and ne
 arch=(x86_64)
 url='https://github.com/ronnyf/macbook12-spi-driver'
 license=(GPL-2.0)
-depends=(kernel>=5.3)
+depends=(kernel>=5.3 dkms linux-headers)
 makedepends=(make kmod)
 source=(
   "$url/releases/download/v$pkgver/$pkgname-$pkgver.tar.gz"
