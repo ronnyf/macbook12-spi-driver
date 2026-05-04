@@ -1111,6 +1111,7 @@ static int appletb_suspend(struct hid_device *hdev, pm_message_t message)
 {
 	struct appletb_device *tb_dev =
 		appleib_get_drvdata(hid_get_drvdata(hdev), &appletb_hid_driver);
+	struct appletb_report_info *report_info;
 	unsigned long flags;
 	bool all_suspended = false;
 
@@ -1122,6 +1123,10 @@ static int appletb_suspend(struct hid_device *hdev, pm_message_t message)
 	 * Wait for both interfaces to be suspended and no more async work
 	 * in progress.
 	 */
+	report_info = appletb_get_report_info(tb_dev, hdev);
+	if (!report_info)
+		return 0;
+
 	spin_lock_irqsave(&tb_dev->tb_lock, flags);
 
 	if (!tb_dev->mode_info.suspended && !tb_dev->disp_info.suspended) {
@@ -1129,7 +1134,7 @@ static int appletb_suspend(struct hid_device *hdev, pm_message_t message)
 		cancel_delayed_work(&tb_dev->tb_work);
 	}
 
-	appletb_get_report_info(tb_dev, hdev)->suspended = true;
+	report_info->suspended = true;
 
 	if ((!tb_dev->mode_info.hdev || tb_dev->mode_info.suspended) &&
 	    (!tb_dev->disp_info.hdev || tb_dev->disp_info.suspended))
@@ -1172,15 +1177,20 @@ static int appletb_reset_resume(struct hid_device *hdev)
 {
 	struct appletb_device *tb_dev =
 		appleib_get_drvdata(hid_get_drvdata(hdev), &appletb_hid_driver);
+	struct appletb_report_info *report_info;
 	unsigned long flags;
 
 	/*
 	 * Restore touch bar state. Note that autopm state is preserved, no need
 	 * explicitly restore that here.
 	 */
+	report_info = appletb_get_report_info(tb_dev, hdev);
+	if (!report_info)
+		return 0;
+
 	spin_lock_irqsave(&tb_dev->tb_lock, flags);
 
-	appletb_get_report_info(tb_dev, hdev)->suspended = false;
+	report_info->suspended = false;
 
 	if ((tb_dev->mode_info.hdev && !tb_dev->mode_info.suspended) &&
 	    (tb_dev->disp_info.hdev && !tb_dev->disp_info.suspended)) {
