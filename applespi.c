@@ -2303,10 +2303,17 @@ static void appleacpi_unregister_phys_devs(struct acpi_device *adev)
 
 		entry = list_first_entry(&adev->physical_node_list,
 					 struct acpi_device_physical_node,
-					 node);
+					node);
 		dev = get_device(entry->dev);
 
 		mutex_unlock(&adev->physical_node_lock);
+
+		if (dev->driver) {
+			pr_warn("Skipping device %s bound to driver %s\n",
+				dev_name(dev), dev->driver->name);
+			put_device(dev);
+			continue;
+		}
 
 		platform_device_unregister(to_platform_device(dev));
 		put_device(dev);
