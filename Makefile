@@ -50,6 +50,7 @@ all:
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
+	rm -rf pkg src
 
 install:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules_install
