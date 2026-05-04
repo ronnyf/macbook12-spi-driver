@@ -438,6 +438,8 @@ struct applespi_data {
 	spinlock_t			cmd_msg_lock;
 	ktime_t				cmd_msg_queued;
 	enum applespi_evt_type		cmd_evt_type;
+	unsigned int			cmd_timeout_count;
+	bool				cmd_in_error;
 
 	struct led_classdev		backlight_info;
 
@@ -932,6 +934,8 @@ static void applespi_msg_complete(struct applespi_data *applespi,
 
 	if (is_write_msg) {
 		applespi->cmd_msg_queued = 0;
+		applespi->cmd_timeout_count = 0;
+		applespi->cmd_in_error = false;
 		applespi_send_cmd_msg(applespi);
 	}
 
@@ -974,13 +978,28 @@ static int applespi_send_cmd_msg(struct applespi_data *applespi)
 	if (applespi->drain)
 		return 0;
 
+	/* check if device is in error state */
+	if (applespi->cmd_in_error)
+		return -EBUSY;
+
 	/* check whether send is in progress */
 	if (applespi->cmd_msg_queued) {
 		if (ktime_ms_delta(ktime_get(), applespi->cmd_msg_queued) < 1000)
 			return 0;
 
-		dev_warn(&applespi->spi->dev, "Command %d timed out\n",
-			 applespi->cmd_evt_type);
+		applespi->cmd_timeout_count++;
+		dev_warn(&applespi->spi->dev, "Command %d timed out (%u/%u)\n",
+			 applespi->cmd_evt_type, applespi->cmd_timeout_count,
+			 (unsigned int)ARRAY_SIZE(applespi->spi_complete));
+
+		if (applespi->cmd_timeout_count >= ARRAY_SIZE(applespi->spi_complete)) {
+			dev_err(&applespi->spi->dev,
+				"Command timeout limit reached, device may be unresponsive\n");
+			applespi->cmd_in_error = true;
+			applespi->cmd_msg_queued = 0;
+			applespi->write_active = false;
+			return -ETIMEDOUT;
+		}
 
 		applespi->cmd_msg_queued = 0;
 		applespi->write_active = false;
