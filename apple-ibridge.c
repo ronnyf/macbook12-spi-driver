@@ -189,7 +189,7 @@ static void appleib_remove_device(struct appleib_device *ib_dev,
 	kfree(dev_info);
 }
 
-void appleib_detach_and_free_hid_driver(struct appleib_device *ib_dev,
+static void appleib_detach_and_free_hid_driver(struct appleib_device *ib_dev,
 					struct appleib_hid_drv_info *drv_info)
 {
 	appleib_detach_devices(ib_dev, drv_info->driver);
