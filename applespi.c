@@ -685,8 +685,12 @@ static int applespi_async(struct applespi_data *applespi,
 	 */
 	if (!applespi->spi_complete[0].complete)
 		info = &applespi->spi_complete[0];
-	else
+	else if (!applespi->spi_complete[1].complete)
 		info = &applespi->spi_complete[1];
+	else {
+		WARN_ON_ONCE(1);
+		return -EBUSY;
+	}
 	info->complete = complete;
 	info->applespi = applespi;
 
@@ -1201,15 +1205,25 @@ static void applespi_debug_update_dimensions(struct applespi_data *applespi,
 static int applespi_tp_dim_open(struct inode *inode, struct file *file)
 {
 	struct applespi_data *applespi = inode->i_private;
+	unsigned long flags;
+	int min_x, min_y, max_x, max_y;
 
 	file->private_data = applespi;
+
+	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
+	min_x = applespi->tp_dim_min_x;
+	min_y = applespi->tp_dim_min_y;
+	max_x = applespi->tp_dim_max_x;
+	max_y = applespi->tp_dim_max_y;
+	applespi->tp_dim_min_x = applespi->tp_dim_min_y = 0x7fffffff;
+	applespi->tp_dim_max_x = applespi->tp_dim_max_y = INT_MIN;
+	applespi->debug_tp_dim = true;
+	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
 
 	snprintf(applespi->tp_dim_val, sizeof(applespi->tp_dim_val),
 		 "0x%.4x %dx%d+%u+%u\n",
 		 applespi->touchpad_input_dev->id.product,
-		 applespi->tp_dim_min_x, applespi->tp_dim_min_y,
-		 applespi->tp_dim_max_x - applespi->tp_dim_min_x,
-		 applespi->tp_dim_max_y - applespi->tp_dim_min_y);
+		 min_x, min_y, max_x - min_x, max_y - min_y);
 
 	return nonseekable_open(inode, file);
 }
@@ -1482,8 +1496,8 @@ applespi_register_touchpad_device(struct applespi_data *applespi,
 		}
 	}
 	if (!touchpad_dimensions[0]) {
-		snprintf(touchpad_dimensions, sizeof(touchpad_dimensions),
-			 "%dx%d+%u+%u",
+		dev_info(&applespi->spi->dev,
+			 "Touchpad dimensions: %dx%d+%u+%u\n",
 			 applespi->tp_info.x_min,
 			 applespi->tp_info.y_min,
 			 applespi->tp_info.x_max - applespi->tp_info.x_min,
@@ -1598,7 +1612,7 @@ static bool applespi_verify_crc(struct applespi_data *applespi, u8 *buffer,
 	if (crc) {
 		dev_warn_ratelimited(&applespi->spi->dev,
 				     "Received corrupted packet (crc mismatch)\n");
-		trace_applespi_bad_crc(ET_RD_CRC, READ, buffer, buflen);
+		trace_applespi_bad_crc(ET_RD_CRC, PT_READ, buffer, buflen);
 
 		return false;
 	}
@@ -1789,7 +1803,7 @@ static u32 applespi_notify(acpi_handle gpe_device, u32 gpe, void *context)
 
 	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
 
-	if (!applespi->suspended) {
+	if (!applespi->suspended && !applespi->read_active) {
 		sts = applespi_async(applespi, &applespi->rd_m,
 				     applespi_async_read_complete);
 		if (sts)
@@ -1877,7 +1891,6 @@ static int applespi_probe(struct spi_device *spi)
 	struct applespi_data *applespi;
 	acpi_handle spi_handle = ACPI_HANDLE(&spi->dev);
 	acpi_status acpi_sts;
-	unsigned long flags;
 	int sts, i;
 	unsigned long long gpe, usb_status;
 
@@ -2082,22 +2095,21 @@ cancel_spi:
 	acpi_disable_gpe(NULL, applespi->gpe);
 	acpi_remove_gpe_handler(NULL, applespi->gpe, applespi_notify);
 
-	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
+	spin_lock_irq(&applespi->cmd_msg_lock);
 	applespi->cancel_spi = true;
 	wait_event_lock_irq(applespi->drain_complete,
 			    !applespi_async_outstanding(applespi),
 			    applespi->cmd_msg_lock);
-	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
+	spin_unlock_irq(&applespi->cmd_msg_lock);
 
 	return sts;
 }
 
 static int applespi_drain_writes(struct applespi_data *applespi)
 {
-	unsigned long flags;
 	int ret;
 
-	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
+	spin_lock_irq(&applespi->cmd_msg_lock);
 
 	applespi->drain = true;
 	ret = wait_event_lock_irq_timeout(applespi->drain_complete,
@@ -2105,7 +2117,7 @@ static int applespi_drain_writes(struct applespi_data *applespi)
 					  applespi->cmd_msg_lock,
 					  msecs_to_jiffies(3000));
 
-	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
+	spin_unlock_irq(&applespi->cmd_msg_lock);
 
 	if (!ret)
 		dev_warn(&applespi->spi->dev, "Timeout draining writes\n");
@@ -2115,10 +2127,9 @@ static int applespi_drain_writes(struct applespi_data *applespi)
 
 static int applespi_drain_reads(struct applespi_data *applespi)
 {
-	unsigned long flags;
 	int ret;
 
-	spin_lock_irqsave(&applespi->cmd_msg_lock, flags);
+	spin_lock_irq(&applespi->cmd_msg_lock);
 
 	ret = wait_event_lock_irq_timeout(applespi->drain_complete,
 					  !applespi->read_active,
@@ -2127,7 +2138,7 @@ static int applespi_drain_reads(struct applespi_data *applespi)
 
 	applespi->suspended = true;
 
-	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
+	spin_unlock_irq(&applespi->cmd_msg_lock);
 
 	if (!ret)
 		dev_warn(&applespi->spi->dev, "Timeout draining reads\n");
