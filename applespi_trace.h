@@ -2,8 +2,8 @@
 /*
  * MacBook (Pro) SPI keyboard and touchpad driver
  *
- * Copyright (c) 2015-2019 Federico Lorenzi
- * Copyright (c) 2017-2019 Ronald Tschalär
+ * Copyright (c) 2015-2026 Federico Lorenzi
+ * Copyright (c) 2017-2026 Ronald Tschalär
  */
 
 #undef TRACE_SYSTEM

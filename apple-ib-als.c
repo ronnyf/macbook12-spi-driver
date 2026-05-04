@@ -2,7 +2,7 @@
 /*
  * Apple Ambient Light Sensor Driver
  *
- * Copyright (c) 2017-2018 Ronald Tschalär
+ * Copyright (c) 2017-2026 Ronald Tschalär
  */
 
 /*
