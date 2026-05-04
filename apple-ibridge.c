@@ -755,6 +755,11 @@ static const struct hid_driver appleib_hid_driver = {
 #endif
 };
 
+static void appleib_srcu_cleanup(void *data)
+{
+	cleanup_srcu_struct(data);
+}
+
 static struct appleib_device *appleib_alloc_device(struct acpi_device *acpi_dev)
 {
 	struct appleib_device *ib_dev;
@@ -768,6 +773,9 @@ static struct appleib_device *appleib_alloc_device(struct acpi_device *acpi_dev)
 	INIT_LIST_HEAD(&ib_dev->hid_devices);
 	mutex_init(&ib_dev->update_lock);
 	init_srcu_struct(&ib_dev->lists_srcu);
+	devm_add_action_or_reset(&acpi_dev->dev,
+				 appleib_srcu_cleanup,
+				 &ib_dev->lists_srcu);
 
 	ib_dev->acpi_dev = acpi_dev;
 
