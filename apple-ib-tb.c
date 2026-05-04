@@ -940,9 +940,24 @@ static int appletb_fill_report_info(struct appletb_device *tb_dev,
 		return -ENODEV;
 	}
 
+	/* Validate interface configuration */
+	if (!usb_iface->cur_altsetting ||
+	    usb_iface->cur_altsetting->desc.bNumEndpoints == 0) {
+		dev_err(tb_dev->log_dev,
+			"Invalid USB interface configuration for hid device %s\n",
+			dev_name(&hdev->dev));
+		return -ENODEV;
+	}
+
 	report_info->hdev = hdev;
 
 	report_info->usb_iface = usb_get_intf(usb_iface);
+
+	/*
+	 * Endpoint 0 is the default control endpoint, which is always present
+	 * on every USB device per the USB specification. HID control transfers
+	 * use this endpoint, so it is correct for these reports.
+	 */
 	report_info->usb_epnum = 0;
 
 	report_info->report_id = field->report->id;
