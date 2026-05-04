@@ -432,7 +432,8 @@ static void appleals_config_sensor(struct appleals_device *als_dev,
 
 	field = appleib_find_report_field(als_dev->cfg_report,
 					 HID_USAGE_SENSOR_PROP_REPORT_INTERVAL);
-	hid_set_field(field, 0, field->logical_minimum);
+	if (field)
+		hid_set_field(field, 0, field->logical_minimum);
 
 	/*
 	 * Set initial change sensitivity; if dynamic, enabling trigger will set
@@ -443,7 +444,8 @@ static void appleals_config_sensor(struct appleals_device *als_dev,
 			HID_USAGE_SENSOR_LIGHT_ILLUM |
 			HID_USAGE_SENSOR_DATA_MOD_CHANGE_SENSITIVITY_ABS);
 
-		hid_set_field(field, 0, sensitivity);
+		if (field)
+			hid_set_field(field, 0, sensitivity);
 	}
 
 	hid_hw_request(als_dev->hid_dev, als_dev->cfg_report,
