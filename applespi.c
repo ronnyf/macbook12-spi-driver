@@ -1217,7 +1217,7 @@ static int applespi_tp_dim_open(struct inode *inode, struct file *file)
 	max_y = applespi->tp_dim_max_y;
 	applespi->tp_dim_min_x = applespi->tp_dim_min_y = 0x7fffffff;
 	applespi->tp_dim_max_x = applespi->tp_dim_max_y = INT_MIN;
-	applespi->debug_tp_dim = true;
+	applespi->debug_tp_dim = true; /* auto-enable tracking on first read */
 	spin_unlock_irqrestore(&applespi->cmd_msg_lock, flags);
 
 	snprintf(applespi->tp_dim_val, sizeof(applespi->tp_dim_val),
